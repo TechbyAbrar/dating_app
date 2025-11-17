@@ -1,0 +1,136 @@
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+.env
+.venv/
+env/
+venv/
+
+# Byte-compiled / cache files
+*.pyo
+*.pyd
+*.pdb
+*.pickle
+
+# Pip installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================
+# Django
+# ============================================
+*.log
+*.pot
+*.pyc
+
+# Django local settings (if you create them)
+local_settings.py
+
+# SQLite database (optional)
+db.sqlite3
+db.sqlite3-journal
+
+# Staticfiles & media (generated)
+staticfiles/
+static/
+media/
+assets/
+build/
+dist/
+
+# ============================================
+# Environment Variables
+# ============================================
+*.env
+.env.*
+*.ini
+
+# ============================================
+# IDE / Editor
+# ============================================
+
+# VSCode
+.vscode/
+.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+
+# ============================================
+# OS / System Files
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.trash-*
+
+# ============================================
+# Docker
+# ============================================
+# Docker-compose override
+docker-compose.override.yml
+
+# Docker build artifacts
+*.pid
+*.seed
+*.pid.lock
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+*.tmp
+
+# ============================================
+# Node (if frontend exists)
+# ============================================
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+*.tsbuildinfo
+
+# Build folders
+build/
+dist/
+
+# ============================================
+# Coverage / Testing
+# ============================================
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+test-results/
+
+# ============================================
+# Misc
+# ============================================
+*.bak
+*.orig
+*.old
