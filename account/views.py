@@ -1,36 +1,36 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-from .serializers import (SignupSerialzier, VerifyOTPSerializer, ResendVerifyOTPSerializer, LoginSerializer, ForgetPasswordSerializer, ResetPasswordSerializer, VerifyForgetPasswordOTPSerializer, UpdateProfileSerializer)
-
-from core.utils import ResponseHandler
-from rest_framework.permissions import IsAuthenticated
-from account.utils import generate_tokens_for_user
-from account.serializers import UserSerializer
-
-from rest_framework import status
-from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+import logging
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Q, Prefetch
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from .models import User
-from rest_framework import permissions
-from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
-from .models import MakeYourProfilePop
-from .serializers import MakeYourProfilePopSerializer
-from django.db.models import Prefetch
-from rest_framework.pagination import PageNumberPagination
-from .models import User, MakeYourProfilePop
-from .serializers import UserSerializer
 
+from rest_framework import status, permissions
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
+from .models import User, MakeYourProfilePop
+from .serializers import (
+    SignupSerialzier,
+    VerifyOTPSerializer,
+    ResendVerifyOTPSerializer,
+    LoginSerializer,
+    ForgetPasswordSerializer,
+    ResetPasswordSerializer,
+    VerifyForgetPasswordOTPSerializer,
+    UpdateProfileSerializer,
+    MakeYourProfilePopSerializer,
+    UserSerializer,
+    WhoLikedUserSerializer,
+)
 from .services import UserLikeService
-from .serializers import UserSerializer
-import logging
+from account.utils import generate_tokens_for_user
+from core.utils import ResponseHandler
 
 logger = logging.getLogger(__name__)
-
 
 # Create your views here.
 class RegisterAPIView(APIView):
@@ -111,8 +111,6 @@ class LoginView(APIView):
         )
 
 
-        
-from django.db import transaction
 
 class ForgetPasswordView(APIView):
     permission_classes = [AllowAny]
@@ -375,6 +373,7 @@ class UserDetailsProfileAPIView(APIView):
 # Like/Unlike Views using UserLikeService
 
 
+
 class LikeUserAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -418,4 +417,71 @@ class WhoLikedUserAPIView(APIView):
             )
         except Exception as e:
             logger.exception("Error fetching users who liked this profile")
+            return ResponseHandler.generic_error(exception=e)
+
+
+# search and filter apis
+
+CACHE_TTL = 60  # seconds
+
+class UserSearchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            query = request.query_params.get("q", "").strip()
+            if not query:
+                return ResponseHandler.bad_request(message="Query param 'q' is required.")
+
+            cache_key = f"user_search:{query}"
+            users = cache.get(cache_key)
+
+            if not users:
+                users = User.objects.filter(
+                    Q(username__icontains=query) |
+                    Q(full_name__icontains=query) |
+                    Q(email__icontains=query)
+                ).order_by("-created_at")[:50]
+                cache.set(cache_key, users, CACHE_TTL)
+
+            serializer = WhoLikedUserSerializer(users, many=True, context={"request": request})
+            return ResponseHandler.success(data=serializer.data)
+
+        except Exception as e:
+            return ResponseHandler.generic_error(exception=e)
+
+
+class UserFilterAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            gender = request.query_params.get("gender")
+            min_age = request.query_params.get("min_age")
+            max_age = request.query_params.get("max_age")
+            max_distance = request.query_params.get("max_distance")
+
+            filters = Q()
+            if gender:
+                filters &= Q(gender=gender)
+            if min_age and max_age:
+                filters &= Q(age__gte=int(min_age), age__lte=int(max_age))
+            elif min_age:
+                filters &= Q(age__gte=int(min_age))
+            elif max_age:
+                filters &= Q(age__lte=int(max_age))
+            if max_distance:
+                filters &= Q(distance__lte=int(max_distance))
+
+            cache_key = f"user_filter:{gender}:{min_age}:{max_age}:{max_distance}"
+            users = cache.get(cache_key)
+
+            if not users:
+                users = User.objects.filter(filters).order_by("-created_at")[:50]
+                cache.set(cache_key, users, CACHE_TTL)
+
+            serializer = WhoLikedUserSerializer(users, many=True, context={"request": request})
+            return ResponseHandler.success(data=serializer.data)
+
+        except Exception as e:
             return ResponseHandler.generic_error(exception=e)
