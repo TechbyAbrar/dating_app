@@ -28,7 +28,7 @@ urlpatterns = [
     
     path('user/<int:user_id>/like/', LikeUserAPIView.as_view(), name='like-user'),
     path('user/<int:user_id>/unlike/', UnlikeUserAPIView.as_view(), name='unlike-user'),
-    path('user/<int:user_id>/who-liked/', WhoLikedUserAPIView.as_view(), name='who-liked-user'),
+    path("who-liked-me/", WhoLikedUserAPIView.as_view(), name="who-liked-me"),
     
     # search & filterpath("users/search/", UserSearchAPIView.as_view(), name="user-search"),
     path("users/search/", UserSearchAPIView.as_view(), name="user-search"),

@@ -405,4 +405,4 @@ class ResetPasswordSerializer(serializers.Serializer):
 class WhoLikedUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["user_id", "username", "full_name", "is_online", "hobbies", 'distance']
+        fields = ["user_id", "username", "full_name", "is_online", "profile_pic", "hobbies", 'distance']

@@ -403,21 +403,84 @@ class UnlikeUserAPIView(APIView):
 
 # who liked
 from .serializers import WhoLikedUserSerializer
+from rest_framework.pagination import PageNumberPagination
+
+CACHE_TTL = 60 * 0.5  # 30 seconds
 
 class WhoLikedUserAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
 
-    def get(self, request, user_id):
+    def get(self, request):
+        user = request.user
+        user_id = user.user_id  # FIXED: your PK
+
+        paginator = self.pagination_class()
+
         try:
-            users = UserLikeService.who_liked_user(user_id)
-            serialized = WhoLikedUserSerializer(users, many=True).data
-            return ResponseHandler.success(
-                message=f"{users.count()} users liked this profile.",
-                data=serialized
+            page_number = request.query_params.get(paginator.page_query_param, "1")
+            page_size = paginator.get_page_size(request) or paginator.page_size or 20
+
+            cache_key = f"who_liked:{user_id}:page:{page_number}:size:{page_size}"
+            cached_payload = cache.get(cache_key)
+
+            if cached_payload:
+                logger.info("who-liked-me cache hit", extra={"user_id": user_id})
+                return ResponseHandler.success(
+                    message=f"{cached_payload['pagination']['count']} users liked your profile.",
+                    data=cached_payload["results"],
+                    extra={"pagination": cached_payload["pagination"]},
+                )
+
+            qs = UserLikeService.who_liked_user(user_id)
+
+            # DRF safely paginates
+            page = paginator.paginate_queryset(qs, request, view=self)
+
+            # If paginated -> `page` is a list of results
+            serialized = WhoLikedUserSerializer(page, many=True).data
+
+            # SAFELY get total count (works even if paginator.page does not exist)
+            try:
+                total_count = qs.count()
+            except Exception:
+                total_count = len(qs)
+
+            pagination = {
+                "count": total_count,
+                "next": paginator.get_next_link(),
+                "previous": paginator.get_previous_link(),
+                "page": int(page_number),
+                "page_size": page_size,
+            }
+
+            payload = {
+                "results": serialized,
+                "pagination": pagination,
+            }
+
+            try:
+                cache.set(cache_key, payload, CACHE_TTL)
+            except Exception:
+                logger.warning("Failed to set cache", extra={"user_id": user_id})
+
+            logger.info(
+                "who-liked-me fetched",
+                extra={"user_id": user_id, "count": total_count},
             )
-        except Exception as e:
-            logger.exception("Error fetching users who liked this profile")
-            return ResponseHandler.generic_error(exception=e)
+
+            return ResponseHandler.success(
+                message=f"{total_count} users liked your profile.",
+                data=serialized,
+                extra={"pagination": pagination},
+            )
+
+        except Exception as exc:
+            logger.exception("Error fetching who-liked-me", extra={"user_id": user_id})
+            return ResponseHandler.generic_error(exception=exc)
+
+
+
 
 
 # search and filter apis

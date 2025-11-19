@@ -33,10 +33,11 @@ class UserLikeService:
             raise ValueError("You haven't liked this user.")
 
     @staticmethod
-    def who_liked_user(user_to_id: int):
-        return (
+    def who_liked_user(user_id: int):
+        qs = (
             User.objects
-            .filter(likes_given__user_to__user_id=user_to_id)
+            .filter(likes_given__user_to__user_id=user_id)
             .values("user_id", "username", "full_name", "is_online", "hobbies")
             .distinct()
         )
+        return qs

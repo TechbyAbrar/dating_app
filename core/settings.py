@@ -53,11 +53,13 @@ INSTALLED_APPS = [
     'privacy',
     'subscription',
     'mutual_system',
+    'chatapp',
     
     # Third party apps
     "rest_framework",
     "corsheaders",
     'drf_spectacular',
+    "channels",
 ]
 
 
@@ -184,7 +186,9 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
-    ]
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
 
 from datetime import timedelta
