@@ -202,18 +202,20 @@ class UpdateProfileView(APIView):
 
     @transaction.atomic
     def patch(self, request):
+        """Partial update of user profile."""
         try:
             user = request.user
             serializer = UpdateProfileSerializer(user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            
-            from .serializers import UserSerializer
-            full_serializer = UserSerializer(user)
+
+            user_data = UserSerializer(user).data
 
             return ResponseHandler.updated(
                 message="Profile partially updated successfully.",
-                data=full_serializer.data,
+                data={
+                    "user": user_data
+                }
             )
 
         except ValidationError as e:
@@ -228,6 +230,35 @@ class UpdateProfileView(APIView):
                 message="Unexpected error occurred while updating profile.",
                 exception=e
             )
+    
+    
+    # def patch(self, request):
+    #     try:
+    #         user = request.user
+    #         serializer = UpdateProfileSerializer(user, data=request.data, partial=True)
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save()
+            
+    #         from .serializers import UserSerializer
+    #         full_serializer = UserSerializer(user)
+
+    #         return ResponseHandler.updated(
+    #             message="Profile partially updated successfully.",
+    #             data=full_serializer.data,
+    #         )
+
+    #     except ValidationError as e:
+    #         return ResponseHandler.bad_request(
+    #             message="Invalid data provided.",
+    #             errors=e.detail
+    #         )
+    #     except User.DoesNotExist:
+    #         return ResponseHandler.not_found("User not found.")
+    #     except Exception as e:
+    #         return ResponseHandler.generic_error(
+    #             message="Unexpected error occurred while updating profile.",
+    #             exception=e
+    #         )
 
 
 

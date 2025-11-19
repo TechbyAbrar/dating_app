@@ -20,3 +20,8 @@ redis-server --daemonize yes
 python manage.py runserver 0.0.0.0:8000 &
 celery -A core worker -l info &
 celery -A core beat -l info &
+
+
+
+# debug development server
+gunicorn core.asgi:application -k uvicorn.workers.UvicornWorker --workers 1 --bind 0.0.0.0:8000

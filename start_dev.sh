@@ -1,15 +1,12 @@
 #!/bin/bash
 
 # =========================================
-# Professional Dev Startup Script
+# Dev Startup Script: Hybrid ASGI/WSGI
 # Project: Django Dating App
 # Services: Redis + Django ASGI (Gunicorn+Uvicorn) + Celery Worker + Celery Beat
-# Using Django's own logging system (NO extra Django log files)
+# Django handles its own logs
 # =========================================
 
-# ------------------------
-# CONFIGURATION
-# ------------------------
 PROJECT_ROOT=$(pwd)
 VENV_PATH="$PROJECT_ROOT/env/bin/activate"
 DJANGO_PORT=8000
@@ -21,12 +18,7 @@ CELERY_WORKER_LOG="$LOG_ROOT/celery_worker.log"
 CELERY_BEAT_LOG="$LOG_ROOT/celery_beat.log"
 REDIS_LOG="$LOG_ROOT/redis.log"
 
-# ------------------------
-# Utility functions
-# ------------------------
-log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
-}
+log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"; }
 
 kill_port() {
     PORT=$1
@@ -42,15 +34,11 @@ check_binary() {
     command -v $1 >/dev/null 2>&1 || { log "ERROR: $1 not found. Aborting."; exit 1; }
 }
 
-# ------------------------
-# Prepare log folder (Celery + Redis only)
-# ------------------------
+# Prepare log folder
 mkdir -p "$LOG_ROOT"
 touch "$CELERY_WORKER_LOG" "$CELERY_BEAT_LOG" "$REDIS_LOG"
 
-# ------------------------
 # Activate virtual environment
-# ------------------------
 log "Activating virtual environment..."
 if [ -f "$VENV_PATH" ]; then
     source "$VENV_PATH"
@@ -59,23 +47,19 @@ else
     exit 1
 fi
 
-# ------------------------
 # Check required binaries
-# ------------------------
 check_binary redis-server
 check_binary gunicorn
 check_binary celery
+check_binary uvicorn
 
-# ------------------------
 # Start Redis
-# ------------------------
 if lsof -i :$REDIS_PORT > /dev/null; then
     log "Redis already running on port $REDIS_PORT"
 else
     log "Starting Redis..."
     redis-server --port $REDIS_PORT --daemonize yes --logfile "$REDIS_LOG"
     sleep 2
-
     if lsof -i :$REDIS_PORT > /dev/null; then
         log "Redis started successfully."
     else
@@ -84,55 +68,41 @@ else
     fi
 fi
 
-# ------------------------
 # Stop existing Django server if any
-# ------------------------
 kill_port $DJANGO_PORT
 
-# ------------------------
-# Start Django ASGI (Gunicorn + Uvicorn)
-# Let Django handle logs (NO extra log files here)
-# ------------------------
+# Start Django ASGI (hybrid HTTP + WebSocket)
 log "Starting Django ASGI server on port $DJANGO_PORT..."
 nohup gunicorn core.asgi:application \
     -k uvicorn.workers.UvicornWorker \
-    --workers 2 \
+    --workers 4 \
     --bind 0.0.0.0:$DJANGO_PORT \
-    --log-level info \
     >/dev/null 2>&1 &
 
 DJANGO_PID=$!
-log "Django PID: $DJANGO_PID"
+log "Django ASGI PID: $DJANGO_PID"
 
-# ------------------------
 # Start Celery Worker
-# ------------------------
 log "Starting Celery worker..."
 nohup celery -A core worker -l info \
     > "$CELERY_WORKER_LOG" 2>&1 &
 CELERY_WORKER_PID=$!
 log "Celery Worker PID: $CELERY_WORKER_PID"
 
-# ------------------------
 # Start Celery Beat
-# ------------------------
 log "Starting Celery Beat..."
 nohup celery -A core beat -l info \
     > "$CELERY_BEAT_LOG" 2>&1 &
 CELERY_BEAT_PID=$!
 log "Celery Beat PID: $CELERY_BEAT_PID"
 
-# ------------------------
 # Final Status
-# ------------------------
 log "===================================="
 log "[SUCCESS] All services started successfully!"
-log "[INFO] Django ASGI: http://127.0.0.1:$DJANGO_PORT"
+log "[INFO] Django ASGI (sync + async) running on http://127.0.0.1:$DJANGO_PORT"
 log ""
 log "Logs:"
 log "  Celery Worker: $CELERY_WORKER_LOG"
 log "  Celery Beat:   $CELERY_BEAT_LOG"
 log "  Redis:         $REDIS_LOG"
-log ""
-log "Django logs are handled internally via settings.py logging config."
 log "===================================="

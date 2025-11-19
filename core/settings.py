@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'privacy',
     'subscription',
     'mutual_system',
-    'chatapp',
+    # 'chat',
     
     # Third party apps
     "rest_framework",
