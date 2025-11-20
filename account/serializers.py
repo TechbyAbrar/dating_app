@@ -403,6 +403,30 @@ class ResetPasswordSerializer(serializers.Serializer):
 # who liked user serializer
 
 class WhoLikedUserSerializer(serializers.ModelSerializer):
+    profile_pic = serializers.SerializerMethodField()
+    distance = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = ["user_id", "username", "full_name", "is_online", "profile_pic", "hobbies", 'distance']
+
+    def get_profile_pic(self, obj):
+
+        request = self.context.get("request")
+        pic = getattr(obj, "profile_pic", None)
+
+
+        if not pic:
+            return None
+        try:
+            url = pic.url
+        except Exception:
+            # File may not exist on storage
+            return None
+        if request is None:
+        # relative URL
+            return url
+        return request.build_absolute_uri(url)
+
+
+    def get_distance(self, obj):
+        return getattr(obj, "distance", None)

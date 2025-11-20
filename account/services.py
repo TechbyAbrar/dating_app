@@ -37,7 +37,7 @@ class UserLikeService:
         qs = (
             User.objects
             .filter(likes_given__user_to__user_id=user_id)
-            .values("user_id", "username", "full_name", "is_online", "hobbies")
+            # .values("user_id", "username", "full_name", "is_online", "hobbies", "profile_pic")
             .distinct()
         )
         return qs
