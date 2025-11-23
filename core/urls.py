@@ -28,6 +28,7 @@ urlpatterns = [
     path('v1/subscription/', include('subscription.urls')),
     path('v1/mutual-system/', include('mutual_system.urls')),
     path('v1/chat/', include('chat.urls')),
+    path('v1/notification/', include('notification.urls')),
     
     # Swagger/OpenAPI schema
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

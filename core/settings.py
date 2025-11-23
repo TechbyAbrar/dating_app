@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'subscription',
     'mutual_system',
     'chat',
+    'notification',
     
     # Third party apps
     "rest_framework",
