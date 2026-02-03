@@ -656,3 +656,40 @@ class UserFilterAPIView(APIView):
 
         except Exception as e:
             return ResponseHandler.generic_error(exception=e)
+
+
+
+#dashboard
+# users/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.db.models import Count, Q
+from django.core.cache import cache
+
+from .models import User
+from .serializers import UserListLiteSerializer
+
+class UserListStatsAPIView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        # 🔥 Minimal column fetch (no model hydration)
+        users = User.objects.values(
+            "user_id", "full_name", "email", "created_at"
+        )
+
+        serializer = UserListLiteSerializer(users, many=True)
+
+        # ⚡ O(1) DB counts (index-backed)
+        stats = User.objects.aggregate(
+            total_users=Count("user_id"),
+            total_verified_users=Count("user_id", filter=Q(is_verified=True)),
+            total_subscribers=Count("user_id", filter=Q(is_subscribed=True)),
+        )
+
+        return Response({
+            "success": True,
+            "stats": stats,
+            "data": serializer.data
+        })

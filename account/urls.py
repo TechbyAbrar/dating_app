@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (RegisterAPIView, VerifyOTPAPIView, ResendVerifyOTPAPIView, LoginView, 
                     ForgetPasswordView, VerifyForgetPasswordOTPView, ResetPasswordView, 
                     UpdateProfileView, PopImageListCreateAPIView, PopImageRetrieveUpdateDeleteAPIView, GlobalFeedAPIView, UserDetailsProfileAPIView
-                    , LikeUserAPIView, UnlikeUserAPIView, WhoLikedUserAPIView, UserSearchAPIView, UserFilterAPIView)
+                    , LikeUserAPIView, UnlikeUserAPIView, WhoLikedUserAPIView, UserSearchAPIView, UserFilterAPIView, UserListStatsAPIView)
 
 urlpatterns = [
     path("signup/", RegisterAPIView.as_view(), name="user-register"),
@@ -33,4 +33,7 @@ urlpatterns = [
     # search & filterpath("users/search/", UserSearchAPIView.as_view(), name="user-search"),
     path("users/search/", UserSearchAPIView.as_view(), name="user-search"),
     path("users/filter/", UserFilterAPIView.as_view(), name="user-filter"),
+    
+    #dashboard
+    path("users/list-fast/", UserListStatsAPIView.as_view(), name="users-list-fast"),
 ]

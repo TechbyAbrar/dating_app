@@ -23,19 +23,16 @@ logger = logging.getLogger(__name__)
 # OTP / Email Utilities
 # ---------------------------
 def generate_otp(length: int = 6) -> str:
-    """Generate a numeric OTP of specified length."""
     range_start = 10**(length - 1)
     range_end = (10**length) - 1
     return str(random.randint(range_start, range_end))
 
 
 def get_otp_expiry(minutes: int = 30):
-    """Return expiry timestamp for OTP."""
     return timezone.now() + timedelta(minutes=minutes)
 
 
 def send_otp_email(recipient_email: str, otp: str) -> None:
-    """Send an OTP to the user's email."""
     from_email = getattr(settings, "EMAIL_HOST_USER", None) or getattr(
         settings, "DEFAULT_FROM_EMAIL", None
     )
@@ -73,9 +70,6 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 def send_otp_sms(phone: str, message: str) -> bool:
-    """
-    Sends SMS using MessageBird API.
-    """
     try:
         client = messagebird.Client(settings.MESSAGEBIRD_API_KEY)
         response = client.message_create(
@@ -98,7 +92,6 @@ def send_otp_sms(phone: str, message: str) -> bool:
 # Token Utilities
 # ---------------------------
 def generate_tokens_for_user(user) -> Dict[str, str]:
-    """Generates access and refresh tokens for a user."""
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
@@ -107,7 +100,6 @@ def generate_tokens_for_user(user) -> Dict[str, str]:
 # Image Utilities
 # ---------------------------
 def validate_image(image) -> None:
-    """Validate image size and format."""
     if image:
         max_size = 2 * 1024 * 1024  # 3MB
         allowed_formats = ["JPEG", "PNG", "GIF"]
@@ -125,7 +117,6 @@ def validate_image(image) -> None:
 # Username Utility
 # ---------------------------
 def generate_username(email: str) -> str:
-    """Generate a username based on email with a random suffix."""
     base = email.split("@")[0][:8]  # first 8 chars before @
     suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
     return f"{base}{suffix}"
@@ -135,7 +126,6 @@ def generate_username(email: str) -> str:
 # Social Token Validation
 # ---------------------------
 def validate_facebook_token(access_token: str) -> Optional[Dict[str, Any]]:
-    """Validate Facebook access token and return user info."""
     try:
         url = f"https://graph.facebook.com/me?fields=id,name,email&access_token={access_token}"
         response = requests.get(url)
@@ -150,7 +140,6 @@ def validate_facebook_token(access_token: str) -> Optional[Dict[str, Any]]:
 
 
 def validate_google_token(id_token: str) -> Optional[Dict[str, Any]]:
-    """Validate Google ID token and return user info."""
     try:
         response = requests.get(
             f"https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={id_token}"

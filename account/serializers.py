@@ -430,3 +430,14 @@ class WhoLikedUserSerializer(serializers.ModelSerializer):
 
     def get_distance(self, obj):
         return getattr(obj, "distance", None)
+    
+    
+# dashboard
+# users/serializers.py
+from rest_framework import serializers
+
+class UserListLiteSerializer(serializers.Serializer):
+    user_id: int = serializers.IntegerField()
+    full_name: str = serializers.CharField(allow_null=True)
+    email: str = serializers.EmailField(allow_null=True)
+    created_at = serializers.DateTimeField()
