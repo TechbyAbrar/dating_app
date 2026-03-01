@@ -1,4 +1,5 @@
 what to do next>
 
 1/ smtp configuration in .env file
-2/ 
+2/ revenue cat configuration
+3/

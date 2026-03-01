@@ -15,7 +15,7 @@ gunicorn core.asgi:application \
   -k uvicorn.workers.UvicornWorker \
   --workers 4 \
   --threads 2 \
-  --bind 0.0.0.0:8001 \
+  --bind 0.0.0.0:8000 \
   --timeout 60 \
   --graceful-timeout 30 \
   --keep-alive 5 \
@@ -37,7 +37,7 @@ redis-cli ping
 # should return: PONG
 
 # port checking
-sudo lsof -t -i:8001
+sudo lsof -t -i:8000
 
 #kill port
 sudo kill -9 <pid>
