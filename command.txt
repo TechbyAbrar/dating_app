@@ -10,6 +10,7 @@ celery -A core beat -l info
 
 # core terminal
 # run django as asgi
+
 gunicorn core.asgi:application \
   -k uvicorn.workers.UvicornWorker \
   --workers 4 \
