@@ -1,27 +1,42 @@
-which celery
-# /mnt/c/Users/abrah/OneDrive/official_projects/dating_app/env/bin/celery
-celery --version
-# Should show something like 5.x.x
-Then start Celery worker
-bash
-Copy code
-celery -A core worker -l info
-And in another terminal:
+# run celery worker and celery beat in different terminal
 
-bash
-Copy code
-celery -A core beat -l info
-Now it will run from your virtual environment, no system errors.
-
-
-#!/bin/bash
+# terminal work
 source env/bin/activate
-redis-server --daemonize yes
-python manage.py runserver 0.0.0.0:8000 &
-celery -A core worker -l info &
-celery -A core beat -l info &
+celery -A core worker -l info
+
+# new terminal work
+source env/bin/activate
+celery -A core beat -l info
+
+# core terminal
+# run django as asgi
+gunicorn core.asgi:application \
+  -k uvicorn.workers.UvicornWorker \
+  --workers 4 \
+  --threads 2 \
+  --bind 0.0.0.0:8001 \
+  --timeout 60 \
+  --graceful-timeout 30 \
+  --keep-alive 5 \
+  --max-requests 2000 \
+  --max-requests-jitter 200 \
+  --access-logfile - \
+  --error-logfile - \
+  --log-level info
 
 
 
-# debug development server
-gunicorn core.asgi:application -k uvicorn.workers.UvicornWorker --workers 1 --bind 0.0.0.0:8000
+# run redis -> another terminal
+redis-server --port 6379
+
+#verify redis
+redis-cli ping
+
+
+# should return: PONG
+
+# port checking
+sudo lsof -t -i:8001
+
+#kill port
+sudo kill -9 <pid>

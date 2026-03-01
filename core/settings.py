@@ -292,92 +292,77 @@ SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 # ============================================
 # LOG SETTINGS
 # ============================================
-# core/settings.py (Logging part)
-import logging
-from datetime import datetime, timedelta
-from pathlib import Path
-import os
-
-BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
-
-# Ensure logs folder exists
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# Remove old logs (keep last 5 days)
-cutoff = datetime.now() - timedelta(days=5)
-for f in LOG_DIR.iterdir():
-    if f.is_file():
-        try:
-            date_part = f.name.split("_")[0]
-            file_date = datetime.strptime(date_part, "%Y-%m-%d")
-            if file_date < cutoff:
-                f.unlink()
-        except Exception:
-            continue
-
-# Daily log file paths
-today_str = datetime.now().strftime("%Y-%m-%d")
-INFO_LOG = LOG_DIR / f"{today_str}_info.log"
-ERROR_LOG = LOG_DIR / f"{today_str}_error.log"
-DEBUG_LOG = LOG_DIR / f"{today_str}_debug.log"
-
-# Logging configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+
     "formatters": {
-        "verbose": {
-            "format": "[%(levelname)s] %(asctime)s | %(name)s | %(filename)s:%(lineno)d | %(message)s"
+        "default": {
+            "format": "[{asctime}] [{levelname}] {message}",
+            "style": "{",
+        },
+        "access": {
+            "format": "[{asctime}] {message}",
+            "style": "{",
         },
     },
+
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-            "level": "DEBUG",
-        },
-        "info_file": {
-            "class": "logging.FileHandler",
-            "formatter": "verbose",
-            "filename": str(INFO_LOG),
+        "access_file": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
             "level": "INFO",
+            "filename": LOG_DIR / "access.log",
+            "when": "D",          # rotate daily
+            "interval": 1,
+            "backupCount": 7,     # keep 7 days only
+            "formatter": "access",
             "encoding": "utf-8",
         },
         "error_file": {
-            "class": "logging.FileHandler",
-            "formatter": "verbose",
-            "filename": str(ERROR_LOG),
+            "class": "logging.handlers.TimedRotatingFileHandler",
             "level": "ERROR",
+            "filename": LOG_DIR / "error.log",
+            "when": "D",          # rotate daily
+            "interval": 1,
+            "backupCount": 7,     # keep 7 days only
+            "formatter": "default",
             "encoding": "utf-8",
         },
-        "debug_file": {
-            "class": "logging.FileHandler",
-            "formatter": "verbose",
-            "filename": str(DEBUG_LOG),
-            "level": "DEBUG",
-            "encoding": "utf-8",
-        },
-    },
-    "root": {
-        "handlers": ["console", "info_file", "error_file", "debug_file"],
-        "level": "DEBUG",
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console", "info_file", "error_file", "debug_file"],
+        "console": {
+            "class": "logging.StreamHandler",
             "level": "INFO",
-            "propagate": True,
+            "formatter": "default",
+        },
+    },
+
+    "loggers": {
+        "django.server": {
+            "handlers": ["access_file", "console"],
+            "level": "INFO",
+            "propagate": False,
         },
         "django.request": {
             "handlers": ["error_file", "console"],
             "level": "ERROR",
             "propagate": False,
         },
-        "django.server": {
-            "handlers": ["error_file", "console"],
-            "level": "ERROR",
+        "gunicorn.access": {
+            "handlers": ["access_file"],
+            "level": "INFO",
             "propagate": False,
         },
+        "gunicorn.error": {
+            "handlers": ["error_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+
+    "root": {
+        "handlers": ["error_file", "console"],
+        "level": "ERROR",
     },
 }
