@@ -366,3 +366,12 @@ LOGGING = {
         "level": "ERROR",
     },
 }
+
+
+
+
+
+# RevenueCat Webhook Secret
+# settings.py
+REVENUECAT_WEBHOOK_SECRET = env('REVENUECAT_WEBHOOK_SECRET')
+REVENUECAT_API_KEY = env('REVENUECAT_API_KEY')  # For server-to-server calls if needed
