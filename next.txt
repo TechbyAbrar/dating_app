@@ -1,0 +1,4 @@
+what to do next>
+
+1/ smtp configuration in .env file
+2/ 
